@@ -1,0 +1,16 @@
+{
+    "name": "ralphg6/hadassar",
+    "description": "A simple RESTful API framework for Fat-Free Framework",
+    "homepage": "http://github.com/ralphg6/hadassar",
+    "license": "MIT",
+    "keywords": ["rest", "restful", "api"],
+    "authors": [
+        {
+            "name": "Raphael Pinto",
+            "email": "raphaelcpinto@gmail.com"
+        }
+    ],
+    "require": {
+        "bcosca/fatfree-core": "*"
+    }
+}
