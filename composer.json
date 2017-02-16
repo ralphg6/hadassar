@@ -12,5 +12,10 @@
     ],
     "require": {
         "bcosca/fatfree-core": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Hadassar\\": "src/Hadassar"
+        }
     }
 }
