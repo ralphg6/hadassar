@@ -2,13 +2,30 @@
 
 namespace Hadassar\Model;
 
-class Base extends \Prefab{
+abstract class Base extends \Prefab{
 
 	protected $_tableName = "";
 
 	protected $_referenceMap = array();
 
+	protected $_hasReferences = false;
+
+	protected $_hasEagerLoadings = false;
+
 	protected $_baseF3;
+
+	function __construct(){
+
+		$this->_hasReferences = sizeof($this->_referenceMap) > 0;
+
+		foreach ($this->_referenceMap as $ref => $refSpec) {
+			if($refSpec['fetch'] == FetchType::EAGER){
+				$this->_hasEagerLoadings = true;
+				break;
+			}
+		}
+
+	}
 
 	function f3(){
 		return @\Base::instance();
@@ -98,6 +115,16 @@ class Base extends \Prefab{
 		 	 from {$this->_tableName}
 			 where {$where}
 			 limit $first,$limit ", $params);
+
+		if($this->_hasEagerLoadings){
+			foreach ($this->_referenceMap as $ref => $refSpec) {
+				if($refSpec['fetch'] == FetchType::EAGER){
+					foreach ($items as &$item) {
+							$item[$ref] = $this->f3()->call("{$refSpec['model']}->get", array($item[$refSpec['columns']]));
+					}
+				}
+			}
+		}
 
 		return $items;
 	}

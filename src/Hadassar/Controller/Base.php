@@ -2,7 +2,7 @@
 
 namespace Hadassar\Controller;
 
-class Base extends \Prefab{
+abstract class Base extends \Prefab{
 
 	protected $_model;
 
