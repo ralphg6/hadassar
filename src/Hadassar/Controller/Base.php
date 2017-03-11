@@ -35,7 +35,10 @@ abstract class Base extends \Prefab{
 	}
 
 	function update($f3, $params) {
-		$this->f3()->error(501);
+		$data = (array) json_decode(file_get_contents('php://input'));
+		$data['id'] = $params['id'];
+
+		$this->_model->update($data);
 	}
 
 	function delete($f3, $params) {
