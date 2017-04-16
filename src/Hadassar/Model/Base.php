@@ -2,13 +2,32 @@
 
 namespace Hadassar\Model;
 
-class Base extends \Prefab{
+abstract class Base extends \Prefab{
 
 	protected $_tableName = "";
 
 	protected $_referenceMap = array();
 
+	protected $_hasReferences = false;
+
+	protected $_hasEagerLoadings = false;
+
 	protected $_baseF3;
+
+	protected $_db;
+
+	function __construct(){
+
+		$this->_hasReferences = sizeof($this->_referenceMap) > 0;
+
+		foreach ($this->_referenceMap as $ref => $refSpec) {
+			if($refSpec['fetch'] == FetchType::EAGER){
+				$this->_hasEagerLoadings = true;
+				break;
+			}
+		}
+
+	}
 
 	function f3(){
 		return @\Base::instance();
@@ -86,8 +105,8 @@ class Base extends \Prefab{
 		if(empty($where)){
 				$where = "true=true";
 		}
-
-		/*if($this->_tableName == "tb_etapa")
+		//if($this->_tableName == "tb_etapa")
+		/*
 			xd("select {$this->_tableName}.*
 				 from {$this->_tableName}
 				 where {$where}
@@ -98,6 +117,32 @@ class Base extends \Prefab{
 		 	 from {$this->_tableName}
 			 where {$where}
 			 limit $first,$limit ", $params);
+
+		if($this->_hasEagerLoadings){
+			foreach ($this->_referenceMap as $ref => $refSpec) {
+				if($refSpec['fetch'] == FetchType::EAGER){
+					foreach ($items as &$item) {
+							if(!isset($refSpec['type']))
+								$refSpec['type'] = "one-to-many";
+
+							switch ($refSpec['type']) {
+								case "one-to-many":
+									$item[$ref] = $this->f3()->call("{$refSpec['model']}->get", array($item[$refSpec['columns']]));
+									break;
+								case "many-to-many":
+									$item[$ref] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
+											"id  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$item['id']})"
+										));
+									break;
+								default:
+									# code...
+									break;
+							}
+
+					}
+				}
+			}
+		}
 
 		return $items;
 	}
@@ -123,6 +168,7 @@ class Base extends \Prefab{
 				return true;
 
 			$sql = "INSERT INTO {$this->_tableName} ({$columns}) VALUES ({$values})";
+			//xd($sql);
 
 			if($this->_execDB($sql)){
 				$params['id'] = $this->f3()->get('DB')->pdo()->lastInsertId();
@@ -172,12 +218,23 @@ class Base extends \Prefab{
 				$values[$arg] = $args[$arg];
 			}
 
-			// /var_dump($values);
+			//var_dump($values);
 
-			return $this->f3()->get('DB')->exec($sql, $values);
+			return $this->getDB()->exec($sql, $values);
 	}
 
 	public function getReferenceMap(){
 		return $this->_referenceMap;
+	}
+
+	public function setDB($db){
+		$this->_db = $db;
+	}
+
+	public function getDB(){
+		if(!$this->_db){
+			return $this->f3()->get('DB');
+		}
+		return $this->_db;
 	}
 }
