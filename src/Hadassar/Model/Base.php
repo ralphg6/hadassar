@@ -76,6 +76,18 @@ abstract class Base extends \Prefab{
 		$mode = $query['mode'] ? $query['mode'] : 'and';
 		unset($query['mode']);
 
+		$count = isset($query['count']);
+		unset($query['count']);
+
+		$order = $query['order'] ? $query['order'] : '';
+		unset($query['order']);
+
+		$order = str_replace(",", " ", str_replace(";", ",", $order));
+
+		if(strlen($order) > 0){
+			$order = "order by $order";
+		}
+
 		$first = $limit*($page-1);
 
 		$where = array();
@@ -112,11 +124,21 @@ abstract class Base extends \Prefab{
 				 where {$where}
 				 limit $first,$limit ", $params);*/
 
+
+		if($count){
+			$items = $this->_execDB(
+				"select count({$this->_tableName}.id) as count
+			 	 from {$this->_tableName}
+				 where {$where}", $params);
+			return intval($items[0]["count"]);
+		}
+
 		$items = $this->_execDB(
 			"select {$this->_tableName}.*
 		 	 from {$this->_tableName}
 			 where {$where}
-			 limit $first,$limit ", $params);
+			 $order
+			 limit $first,$limit", $params);
 
 		if($this->_hasEagerLoadings){
 			foreach ($this->_referenceMap as $ref => $refSpec) {
