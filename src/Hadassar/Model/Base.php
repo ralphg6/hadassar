@@ -6,6 +6,8 @@ abstract class Base extends \Prefab{
 
 	protected $_tableName = "";
 
+	protected $_primary = "id";
+
 	protected $_referenceMap = array();
 
 	protected $_hasReferences = false;
@@ -40,7 +42,7 @@ abstract class Base extends \Prefab{
 		}
 
 		if(!isset($params['where'])){
-			$params['where'] = "{$this->_tableName}.id = {$params['param']}";
+			$params['where'] = "{$this->_tableName}.{$this->_primary} = {$params['param']}";
 		}
 
 		$where = $params['where'];
@@ -127,46 +129,91 @@ abstract class Base extends \Prefab{
 
 		if($count){
 			$items = $this->_execDB(
-				"select count({$this->_tableName}.id) as count
+				"select count({$this->_tableName}.{$this->_primary}) as count
 			 	 from {$this->_tableName}
 				 where {$where}", $params);
 			return intval($items[0]["count"]);
 		}
+
+		$limit_str = "limit $first,$limit";
+		if($limit < 1){
+			$limit_str = "";
+		}
+
+	//	xd($limit_str);
 
 		$items = $this->_execDB(
 			"select {$this->_tableName}.*
 		 	 from {$this->_tableName}
 			 where {$where}
 			 $order
-			 limit $first,$limit", $params);
+			 $limit_str", $params);
 
 		if($this->_hasEagerLoadings){
 			foreach ($this->_referenceMap as $ref => $refSpec) {
 				if($refSpec['fetch'] == FetchType::EAGER){
 					foreach ($items as &$item) {
-							if(!isset($refSpec['type']))
-								$refSpec['type'] = "one-to-many";
-
-							switch ($refSpec['type']) {
-								case "one-to-many":
-									$item[$ref] = $this->f3()->call("{$refSpec['model']}->get", array($item[$refSpec['columns']]));
-									break;
-								case "many-to-many":
-									$item[$ref] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
-											"id  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$item['id']})"
-										));
-									break;
-								default:
-									# code...
-									break;
-							}
-
+							$this->loadRef( array(
+									"item" => &$item,
+									"ref" => $ref,
+							));
 					}
 				}
 			}
 		}
 
 		return $items;
+	}
+
+	function loadRef($params) {
+
+		$obj =& $params["item"];
+		$id = $obj[$this->_primary];
+
+		$refName = $params["ref"];
+		$refSpec = $this->getReferenceMap($refName);
+
+		switch ($refSpec['type']) {
+			case "one-to-many":
+				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->get", array($obj[$refSpec['columns']]));
+				break;
+			case "many-to-many":
+				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
+						"{$this->_primary}  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$id})"
+					));
+				break;
+			case "reverse":
+				$rmetadata =  $this->f3()->call("{$refSpec['model']}->getMetada");
+				$reverseRefMap = $rmetadata["referenceMap"];
+
+				$tmodel = get_class($this);
+
+				$rrefs = array();
+
+				foreach ($reverseRefMap as $rrefSpec) {
+						if($rrefSpec["model"] == $tmodel){
+								$rrefs[] = $rrefSpec;
+						}
+				}
+
+				if(count($rrefs) != 1){
+					$this->f3()->error("500", "Couln't defined the reverse reference, retriveds: ".count($rrefs));
+					exit();
+				}
+
+				$rrefSpec = $rrefs[0];
+
+				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
+						"{$rrefSpec['columns']} = {$id}"
+				));
+				break;
+			default:
+				$this->f3()->error("405", "Reference Load Type '{$refSpec['type']}' not implemented");
+				exit();
+				break;
+		}
+
+		return $obj[$refName];
 	}
 
 	function create(&$params) {
@@ -177,7 +224,7 @@ abstract class Base extends \Prefab{
 				if(is_string($value)){
 					$value = "'$value'";
 				}
-				if($value == NULL){
+				if(!is_numeric($value) && $value == NULL){
 					$value = "NULL";
 				}
 				array_push($values, $value);
@@ -193,17 +240,17 @@ abstract class Base extends \Prefab{
 			//xd($sql);
 
 			if($this->_execDB($sql)){
-				$params['id'] = $this->f3()->get('DB')->pdo()->lastInsertId();
-				$params = $this->get($params['id']);
-				return $params['id'];
+				$params[$this->_primary] = $this->f3()->get('DB')->pdo()->lastInsertId();
+				$params = $this->get($params[$this->_primary]);
+				return $params[$this->_primary];
 			}
 
 			return false;
 	}
 
 	function update($params) {
-			$id = $params['id'];
-			unset($params['id']);
+			$id = $params[$this->_primary];
+			unset($params[$this->_primary]);
 
 			$updates = array();
 
@@ -212,6 +259,11 @@ abstract class Base extends \Prefab{
 					continue;
 				if(is_string($value)){
 					$value = "'$value'";
+				}
+				if(is_resource($value)){
+					$meta_data = stream_get_meta_data($value);
+					$filename = $meta_data["uri"];
+					$value = "LOAD_FILE('$filename')";
 				}
 				array_push($updates, "$key=$value");
 			}
@@ -222,15 +274,21 @@ abstract class Base extends \Prefab{
 				return true;
 
 			$sql = "UPDATE {$this->_tableName} SET $updates WHERE id=$id";
+			echo($sql);
+		//	exit();
 			$this->_execDB($sql);
 	}
 
 	function remove($params) {
-			$this->f3()->error(501, 'model remove');
+			$id = $params[$this->_primary];
+			unset($params[$this->_primary]);
+
+			$sql = "DELETE FROM {$this->_tableName} WHERE {$this->_primary}=$id";
+			$this->_execDB($sql);
 	}
 
 	protected function _execDB($sql, $args = array()){
-			//echo($sql."\n".var_export($args, true)."\n-------------\n");
+			//xd_echo($sql."\n".var_export($args, true)."\n-------------\n");
 
 			//die($sql);
 			preg_match_all('/:([a-zA-Z_]+)/', $sql, $matches);
@@ -245,8 +303,31 @@ abstract class Base extends \Prefab{
 			return $this->getDB()->exec($sql, $values);
 	}
 
-	public function getReferenceMap(){
-		return $this->_referenceMap;
+	public function fixAutoincrement(){
+		$sql = "SELECT max({$this->_primary}) AS max FROM {$this->_tableName}";
+		$items = $this->_execDB($sql);
+		$max = intval($items[0]["max"]);
+		$prox = $max + 1;
+		$sql = "ALTER TABLE {$this->_tableName} auto_increment = $prox";
+		return $this->getDB()->exec($sql);
+	}
+
+	public function getMetada(){
+		return array(
+			"primary" => $this->_primary,
+			"tableName" => $this->_tableName,
+			"referenceMap" => $this->getReferenceMap(),
+		);
+	}
+
+	public function getReferenceMap($refName = NULL){
+		foreach ($this->_referenceMap as &$refSpec) {
+			if(!isset($refSpec['type'])){
+				$refSpec['type'] = "one-to-many";
+			}
+		}
+
+		return isset($refName) ? $this->_referenceMap[$refName] : $this->_referenceMap;
 	}
 
 	public function setDB($db){
@@ -259,4 +340,6 @@ abstract class Base extends \Prefab{
 		}
 		return $this->_db;
 	}
+
+
 }

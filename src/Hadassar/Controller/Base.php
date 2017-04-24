@@ -48,13 +48,16 @@ abstract class Base extends \Prefab{
 	function subRoute($f3, $params){
 		$route = $params['subRoute'];
 
+		$item = $this->_model->get(array('param' => $params['id']));
+
 		$modelSubRoutes = array();
 		foreach ($this->_model->getReferenceMap() as $ref => $refSpec) {
 			$modelSubRoutes[$ref] = array(
-					"method" => "{$refSpec['model']}->get",
+					"method" => get_class($this->_model)."->loadRef",
 					"params" => array(
-							"param" => ":{$refSpec['columns']}"
-					)
+							"item" => &$item,
+							"ref" => $ref,
+					),
 			);
 		}
 
@@ -67,7 +70,7 @@ abstract class Base extends \Prefab{
 
 		$routeSpec = $routes[$route];
 
-		$item = $this->_model->get(array('param' => $params['id']));
+
 
 		if($item == null){
 			$this->f3()->error(404);
