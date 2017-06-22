@@ -13,7 +13,7 @@ abstract class Base extends \Prefab{
 	}
 
 	function get($f3, $params) {
-		$params['param'] = $params['id'];
+		$params['param'] = $params[$this->_model->primary];
 		$item = $this->_model->get($params);
 
 		if($item == null){
@@ -36,9 +36,11 @@ abstract class Base extends \Prefab{
 
 	function update($f3, $params) {
 		$data = (array) json_decode(file_get_contents('php://input'));
-		$data['id'] = $params['id'];
+		$data[$this->_model->primary] = $params[$this->_model->primary];
 
 		$this->_model->update($data);
+
+		$this->get($f3, $params);
 	}
 
 	function delete($f3, $params) {
@@ -48,7 +50,7 @@ abstract class Base extends \Prefab{
 	function subRoute($f3, $params){
 		$route = $params['subRoute'];
 
-		$item = $this->_model->get(array('param' => $params['id']));
+		$item = $this->_model->get(array('param' => $params[$this->_model->primary]));
 
 		$modelSubRoutes = array();
 		foreach ($this->_model->getReferenceMap() as $ref => $refSpec) {
