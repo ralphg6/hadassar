@@ -6,7 +6,7 @@ abstract class Base extends \Prefab{
 
 	protected $_tableName = "";
 
-	protected $_primary = "id";
+	public $primary = "id";
 
 	protected $_referenceMap = array();
 
@@ -42,7 +42,7 @@ abstract class Base extends \Prefab{
 		}
 
 		if(!isset($params['where'])){
-			$params['where'] = "{$this->_tableName}.{$this->_primary} = {$params['param']}";
+			$params['where'] = "{$this->_tableName}.{$this->primary} = {$params['param']}";
 		}
 
 		$where = $params['where'];
@@ -69,7 +69,9 @@ abstract class Base extends \Prefab{
 
 		$query = $params['query'] ? $params['query'] : array();
 
-		$limit = $query['limit'] ? $query['limit'] : 10;
+		//xd_echo($query);
+
+		$limit = isset($query['limit']) ? $query['limit'] : 10;
 		unset($query['limit']);
 
 		$page = $query['page'] ? $query['page'] : 1;
@@ -129,18 +131,18 @@ abstract class Base extends \Prefab{
 
 		if($count){
 			$items = $this->_execDB(
-				"select count({$this->_tableName}.{$this->_primary}) as count
+				"select count({$this->_tableName}.{$this->primary}) as count
 			 	 from {$this->_tableName}
 				 where {$where}", $params);
 			return intval($items[0]["count"]);
 		}
 
 		$limit_str = "limit $first,$limit";
-		if($limit < 1){
+		if((is_bool($limit) && !$limit) || $limit < 1){
 			$limit_str = "";
 		}
 
-	//	xd($limit_str);
+	//	xd($limit, $limit_str);
 
 		$items = $this->_execDB(
 			"select {$this->_tableName}.*
@@ -166,9 +168,10 @@ abstract class Base extends \Prefab{
 	}
 
 	function loadRef($params) {
+		//xd_echo($params);
 
 		$obj =& $params["item"];
-		$id = $obj[$this->_primary];
+		$id = $obj[$this->primary];
 
 		$refName = $params["ref"];
 		$refSpec = $this->getReferenceMap($refName);
@@ -179,7 +182,7 @@ abstract class Base extends \Prefab{
 				break;
 			case "many-to-many":
 				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
-						"{$this->_primary}  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$id})"
+						"{$this->primary}  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$id})"
 					));
 				break;
 			case "reverse":
@@ -222,10 +225,13 @@ abstract class Base extends \Prefab{
 
 			foreach ($params as $column => $value) {
 				if(is_string($value)){
-					$value = "'$value'";
+					$value = "'".addslashes($value)."'";
 				}
-				if(!is_numeric($value) && $value == NULL){
+				if(!is_numeric($value) && $value === NULL){
 					$value = "NULL";
+				}
+				if(is_bool($value)){
+					$value = $value ? 1 : 0;
 				}
 				array_push($values, $value);
 			}
@@ -237,34 +243,42 @@ abstract class Base extends \Prefab{
 				return true;
 
 			$sql = "INSERT INTO {$this->_tableName} ({$columns}) VALUES ({$values})";
-			//xd($sql);
+		  //echo($sql."\n");
 
 			if($this->_execDB($sql)){
-				$params[$this->_primary] = $this->f3()->get('DB')->pdo()->lastInsertId();
-				$params = $this->get($params[$this->_primary]);
-				return $params[$this->_primary];
+				//echo "true\n";
+				if(!isset($params[$this->primary])){
+						$params[$this->primary] = $this->getDB()->pdo()->lastInsertId();
+				}
+				$params = $this->get($params[$this->primary]);
+				return $params[$this->primary];
 			}
 
+			//echo "false\n";
 			return false;
 	}
 
 	function update($params) {
-			$id = $params[$this->_primary];
-			unset($params[$this->_primary]);
+			$id = $params[$this->primary];
+			unset($params[$this->primary]);
 
 			$updates = array();
 
 			foreach ($params as $key => $value) {
-				if(empty($value))
-					continue;
-				if(is_string($value)){
-					$value = "'$value'";
+				if(is_bool($value)){
+					$value = $value ? 1 : 0;
 				}
 				if(is_resource($value)){
 					$meta_data = stream_get_meta_data($value);
 					$filename = $meta_data["uri"];
 					$value = "LOAD_FILE('$filename')";
 				}
+				if(is_string($value)){
+					$value = "'".addslashes($value)."'";
+				}
+				if(empty($value))
+					continue;
+
 				array_push($updates, "$key=$value");
 			}
 
@@ -273,17 +287,17 @@ abstract class Base extends \Prefab{
 			if(empty($updates))
 				return true;
 
-			$sql = "UPDATE {$this->_tableName} SET $updates WHERE id=$id";
-			echo($sql);
-		//	exit();
+			$sql = "UPDATE {$this->_tableName} SET $updates WHERE {$this->primary}=$id";
+			//echo($sql);
+			//exit();
 			$this->_execDB($sql);
 	}
 
 	function remove($params) {
-			$id = $params[$this->_primary];
-			unset($params[$this->_primary]);
+			$id = $params[$this->primary];
+			unset($params[$this->primary]);
 
-			$sql = "DELETE FROM {$this->_tableName} WHERE {$this->_primary}=$id";
+			$sql = "DELETE FROM {$this->_tableName} WHERE {$this->primary}=$id";
 			$this->_execDB($sql);
 	}
 
@@ -304,7 +318,7 @@ abstract class Base extends \Prefab{
 	}
 
 	public function fixAutoincrement(){
-		$sql = "SELECT max({$this->_primary}) AS max FROM {$this->_tableName}";
+		$sql = "SELECT max({$this->primary}) AS max FROM {$this->_tableName}";
 		$items = $this->_execDB($sql);
 		$max = intval($items[0]["max"]);
 		$prox = $max + 1;
@@ -314,7 +328,7 @@ abstract class Base extends \Prefab{
 
 	public function getMetada(){
 		return array(
-			"primary" => $this->_primary,
+			"primary" => $this->primary,
 			"tableName" => $this->_tableName,
 			"referenceMap" => $this->getReferenceMap(),
 		);
