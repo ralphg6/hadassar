@@ -37,7 +37,9 @@ abstract class Base extends \Prefab{
 		return @\Base::instance();
 	}
 
-	function get($params) {
+	function get($params, $options = array()) {
+
+		//xd_echo($params);
 
 		if(!is_array($params)){
 			$params = array('param' => ':id', 'id' => $params);
@@ -51,26 +53,33 @@ abstract class Base extends \Prefab{
 
 		unset($params['where']);
 
-		return $this->fetchRow($where, $params);
+		return $this->fetchRow($where, $params, $options);
 	}
 
-	function fetchRow($where, $params = array()) {
-		return $this->fetchAll($where, $params)[0];
+	function fetchRow($where, $params = array(), $options = array()) {
+		return $this->fetchAll($where, $params, $options)[0];
 	}
 
-	function fetchAll($where, $params = array()) {
+	function fetchAll($where, $params = array(), $options = array()) {
 
 		$params['where'] = $where;
 
-		$items = $this->find($params);
+		$items = $this->find($params, $options);
 
 		return $items;
 	}
 
-	function find($params) {
+	function find($params, $options = array()) {
+
+		$loads = isset($options['_load']) ? $options['_load'] : [];
+
+		if(!is_array($loads)){
+			$loads = array($loads);
+		}
 
 		$query = $params['query'] ? $params['query'] : array();
 
+		unset($query["_load"]);
 		//xd_echo($query);
 
 		$limit = isset($query['limit']) ? $query['limit'] : 10;
@@ -153,9 +162,9 @@ abstract class Base extends \Prefab{
 			 $order
 			 $limit_str", $params);
 
-		if($this->_hasEagerLoadings){
+		if($this->_hasEagerLoadings || count($loads)){
 			foreach ($this->_referenceMap as $ref => $refSpec) {
-				if($refSpec['fetch'] == FetchType::EAGER){
+				if($refSpec['fetch'] == FetchType::EAGER || in_array($ref, $loads)){
 					foreach ($items as &$item) {
 							$this->loadRef( array(
 									"item" => &$item,

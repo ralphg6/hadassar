@@ -13,8 +13,10 @@ abstract class Base extends \Prefab{
 	}
 
 	function get($f3, $params) {
+
 		$params['param'] = $params[$this->_model->primary];
-		$item = $this->_model->get($params);
+
+		$item = $this->_model->get($params, $this->_handleOptions());
 
 		if($item == null){
 				$this->f3()->error(404);
@@ -25,8 +27,9 @@ abstract class Base extends \Prefab{
 	}
 
 	function getAll($f3, $params) {
+
 		$params['query'] = $_GET;
-		$items = $this->_model->find($params);
+		$items = $this->_model->find($params, $this->_handleOptions());
 		$this->_echoJSON($items);
 	}
 
@@ -101,5 +104,15 @@ abstract class Base extends \Prefab{
 	protected function _echoJSON($object){
 		header('Content-Type: application/json; charset=UTF-8');
 		echo json_encode($object);
+	}
+
+	protected function _handleOptions(){
+		$options = array();
+
+		if(isset($_GET["_load"])){
+			$options["_load"] = $_GET["_load"];
+		}
+
+		return $options;
 	}
 }
