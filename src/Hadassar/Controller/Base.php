@@ -31,7 +31,8 @@ abstract class Base extends \Prefab{
 	}
 
 	function create($f3, $params) {
-		$this->f3()->error(501);
+		$data = (array) json_decode(file_get_contents('php://input'));
+		$this->_model->create($data);
 	}
 
 	function update($f3, $params) {
@@ -44,7 +45,7 @@ abstract class Base extends \Prefab{
 	}
 
 	function delete($f3, $params) {
-		$this->f3()->error(501);
+		$this->_model->remove($params);
 	}
 
 	function subRoute($f3, $params){

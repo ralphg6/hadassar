@@ -4,6 +4,8 @@ namespace Hadassar\Model;
 
 abstract class Base extends \Prefab{
 
+	protected $_mapper;
+
 	protected $_tableName = "";
 
 	public $primary = "id";
@@ -122,11 +124,11 @@ abstract class Base extends \Prefab{
 				$where = "true=true";
 		}
 		//if($this->_tableName == "tb_etapa")
-		/*
-			xd("select {$this->_tableName}.*
-				 from {$this->_tableName}
-				 where {$where}
-				 limit $first,$limit ", $params);*/
+
+			// xd("select {$this->_tableName}.*
+			// 	 from {$this->_tableName}
+			// 	 where {$where}
+			// 	 offset $first limit $limit ", $params);
 
 
 		if($count){
@@ -137,7 +139,7 @@ abstract class Base extends \Prefab{
 			return intval($items[0]["count"]);
 		}
 
-		$limit_str = "limit $first,$limit";
+		$limit_str = "offset $first limit $limit";
 		if((is_bool($limit) && !$limit) || $limit < 1){
 			$limit_str = "";
 		}
@@ -164,8 +166,14 @@ abstract class Base extends \Prefab{
 			}
 		}
 
+		foreach ($items as $item) {
+			$this->prepare($item);
+		}
+
 		return $items;
 	}
+
+	function prepare(&$item){}
 
 	function loadRef($params) {
 		//xd_echo($params);
