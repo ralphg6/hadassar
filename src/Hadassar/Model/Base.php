@@ -4,8 +4,6 @@ namespace Hadassar\Model;
 
 abstract class Base extends \Prefab{
 
-	protected $_mapper;
-
 	protected $_tableName = "";
 
 	public $primary = "id";
@@ -73,9 +71,7 @@ abstract class Base extends \Prefab{
 
 		$loads = isset($options['_load']) ? $options['_load'] : [];
 
-		if(!is_array($loads)){
-			$loads = array($loads);
-		}
+		//xd_echo($loads);
 
 		$query = $params['query'] ? $params['query'] : array();
 
@@ -166,10 +162,26 @@ abstract class Base extends \Prefab{
 			foreach ($this->_referenceMap as $ref => $refSpec) {
 				if($refSpec['fetch'] == FetchType::EAGER || in_array($ref, $loads)){
 					foreach ($items as &$item) {
+
+							$subLoads = array();
+							foreach ($loads as $value) {
+									$meta = explode(".", $value, 2);
+									if(count($meta) == 2 && $meta[0] == $ref){
+										$subLoads[] = $meta[1];
+									}
+							}
+
+						//	xd_echo($subLoads);
+
+							$subOpts = array_merge($options, array(
+								"_load" => $subLoads
+							));
+
 							$this->loadRef( array(
 									"item" => &$item,
 									"ref" => $ref,
-							));
+							), $subOpts
+						);
 					}
 				}
 			}
@@ -184,8 +196,8 @@ abstract class Base extends \Prefab{
 
 	function prepare(&$item){}
 
-	function loadRef($params) {
-		//xd_echo($params);
+	function loadRef($params, $options = array()) {
+		//xd($options);
 
 		$obj =& $params["item"];
 		$id = $obj[$this->primary];
@@ -195,12 +207,12 @@ abstract class Base extends \Prefab{
 
 		switch ($refSpec['type']) {
 			case "one-to-many":
-				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->get", array($obj[$refSpec['columns']]));
+				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->get", array($obj[$refSpec['columns']], $options));
 				break;
 			case "many-to-many":
 				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
 						"{$this->primary}  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$id})"
-					));
+					, array() , $options));
 				break;
 			case "reverse":
 				$rmetadata =  $this->f3()->call("{$refSpec['model']}->getMetada");
@@ -224,7 +236,7 @@ abstract class Base extends \Prefab{
 				$rrefSpec = $rrefs[0];
 
 				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
-						"{$rrefSpec['columns']} = {$id}"
+						"{$rrefSpec['columns']} = {$id}", array(), $options
 				));
 				break;
 			default:

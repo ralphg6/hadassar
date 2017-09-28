@@ -57,13 +57,16 @@ abstract class Base extends \Prefab{
 		$item = $this->_model->get(array('param' => $params[$this->_model->primary]));
 
 		$modelSubRoutes = array();
+
 		foreach ($this->_model->getReferenceMap() as $ref => $refSpec) {
+
 			$modelSubRoutes[$ref] = array(
 					"method" => get_class($this->_model)."->loadRef",
 					"params" => array(
 							"item" => &$item,
 							"ref" => $ref,
 					),
+					"options" => $this->_handleOptions(),
 			);
 		}
 
@@ -92,7 +95,7 @@ abstract class Base extends \Prefab{
 
 		//xd($params);
 
-		$result = $this->f3()->call($routeSpec['method'], array($params));
+		$result = $this->f3()->call($routeSpec['method'], array($params, $routeSpec['options']));
 
 		$this->_echoJSON($result);
 	}
@@ -109,8 +112,13 @@ abstract class Base extends \Prefab{
 	protected function _handleOptions(){
 		$options = array();
 
+	//	xd_echo($_GET);
+
 		if(isset($_GET["_load"])){
 			$options["_load"] = $_GET["_load"];
+			if(!is_array($options["_load"])){
+				$options["_load"] = array($options["_load"]);
+			}
 		}
 
 		return $options;
