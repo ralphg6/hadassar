@@ -36,6 +36,7 @@ abstract class Base extends \Prefab{
 	function create($f3, $params) {
 		$data = (array) json_decode(file_get_contents('php://input'));
 		$this->_echoJSON($this->_model->create($data));
+		$this->f3()->status(201);
 	}
 
 	function update($f3, $params) {
@@ -49,6 +50,7 @@ abstract class Base extends \Prefab{
 
 	function delete($f3, $params) {
 		$this->_model->remove($params);
+		$this->f3()->status(204);
 	}
 
 	function subRoute($f3, $params){
