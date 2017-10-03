@@ -73,18 +73,20 @@ abstract class Base extends \Prefab{
 
 		$loads = isset($options['_load']) ? $options['_load'] : [];
 
-		//xd_echo($loads);
-
 		$query = $params['query'] ? $params['query'] : array();
-
 		unset($query["_load"]);
-		//xd_echo($query);
+
+		$offset = isset($query['_offset']) ? $query['_offset'] : false;
+		unset($query['_offset']);
 
 		$limit = isset($query['_limit']) ? $query['_limit'] : 10;
 		unset($query['_limit']);
 
 		$page = $query['_page'] ? $query['_page'] : 1;
 		unset($query['_page']);
+
+		if(!$offset)
+			$offset = $limit*($page-1);
 
 		$mode = $query['_mode'] ? $query['_mode'] : 'and';
 		unset($query['_mode']);
@@ -101,7 +103,7 @@ abstract class Base extends \Prefab{
 			$order = "order by $order";
 		}
 
-		$first = $limit*($page-1);
+
 
 		$where = array();
 
@@ -135,7 +137,7 @@ abstract class Base extends \Prefab{
 			// xd("select {$this->_tableName}.*
 			// 	 from {$this->_tableName}
 			// 	 where {$where}
-			// 	 offset $first limit $limit ", $params);
+			// 	 offset $offset limit $limit ", $params);
 
 
 		if($count){
@@ -146,7 +148,7 @@ abstract class Base extends \Prefab{
 			return intval($items[0]["count"]);
 		}
 
-		$limit_str = "offset $first limit $limit";
+		$limit_str = "offset $offset limit $limit";
 		if((is_bool($limit) && !$limit) || $limit < 1){
 			$limit_str = "";
 		}
