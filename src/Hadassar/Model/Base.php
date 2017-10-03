@@ -8,6 +8,8 @@ abstract class Base extends \Prefab{
 
 	public $primary = "id";
 
+	protected $_special_columns = array();
+
 	protected $_referenceMap = array();
 
 	protected $_hasReferences = false;
@@ -78,20 +80,20 @@ abstract class Base extends \Prefab{
 		unset($query["_load"]);
 		//xd_echo($query);
 
-		$limit = isset($query['limit']) ? $query['limit'] : 10;
-		unset($query['limit']);
+		$limit = isset($query['_limit']) ? $query['_limit'] : 10;
+		unset($query['_limit']);
 
-		$page = $query['page'] ? $query['page'] : 1;
-		unset($query['page']);
+		$page = $query['_page'] ? $query['_page'] : 1;
+		unset($query['_page']);
 
-		$mode = $query['mode'] ? $query['mode'] : 'and';
-		unset($query['mode']);
+		$mode = $query['_mode'] ? $query['_mode'] : 'and';
+		unset($query['_mode']);
 
-		$count = isset($query['count']);
-		unset($query['count']);
+		$count = isset($query['_count']);
+		unset($query['_count']);
 
-		$order = $query['order'] ? $query['order'] : '';
-		unset($query['order']);
+		$order = $query['_order'] ? $query['_order'] : '';
+		unset($query['_order']);
 
 		$order = str_replace(",", " ", str_replace(";", ",", $order));
 
@@ -158,10 +160,20 @@ abstract class Base extends \Prefab{
 			 $order
 			 $limit_str", $params);
 
+
+	  foreach($this->_special_columns as $column => $colSpec){
+			if($colSpec['list_fetch'] == FetchType::NO_FETCH){
+				foreach ($items as &$item) {
+					unset($item[$column]);
+				}
+			}
+		}
+
 		if($this->_hasEagerLoadings || count($loads)){
 			foreach ($this->_referenceMap as $ref => $refSpec) {
 				if($refSpec['fetch'] == FetchType::EAGER || in_array($ref, $loads)){
 					foreach ($items as &$item) {
+
 
 							$subLoads = array();
 							foreach ($loads as $value) {
@@ -171,17 +183,15 @@ abstract class Base extends \Prefab{
 									}
 							}
 
-						//	xd_echo($subLoads);
-
 							$subOpts = array_merge($options, array(
 								"_load" => $subLoads
 							));
 
 							$this->loadRef( array(
-									"item" => &$item,
-									"ref" => $ref,
-							), $subOpts
-						);
+										"item" => &$item,
+										"ref" => $ref,
+								), $subOpts
+							);
 					}
 				}
 			}
@@ -198,6 +208,8 @@ abstract class Base extends \Prefab{
 
 	function loadRef($params, $options = array()) {
 		//xd($options);
+
+		echo "load {$this->_tableName} {$params['item']['id']} {$params['ref']} \n";
 
 		$obj =& $params["item"];
 		$id = $obj[$this->primary];
