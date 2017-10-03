@@ -27,7 +27,6 @@ abstract class Base extends \Prefab{
 	}
 
 	function getAll($f3, $params) {
-
 		$params['query'] = $_GET;
 		$items = $this->_model->find($params, $this->_handleOptions());
 		$this->_echoJSON($items);

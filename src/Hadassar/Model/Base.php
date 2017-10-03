@@ -99,11 +99,11 @@ abstract class Base extends \Prefab{
 
 		$order = str_replace(",", " ", str_replace(";", ",", $order));
 
-		if(strlen($order) > 0){
-			$order = "order by $order";
+		if(strlen($order) < 1){
+			$order = "{$this->primary} ASC";
 		}
 
-
+		$order = "order by $order";
 
 		$where = array();
 
