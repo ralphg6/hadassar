@@ -211,7 +211,7 @@ abstract class Base extends \Prefab{
 	function loadRef($params, $options = array()) {
 		//xd($options);
 
-		echo "load {$this->_tableName} {$params['item']['id']} {$params['ref']} \n";
+//		echo "load {$this->_tableName} {$params['item']['id']} {$params['ref']} \n";
 
 		$obj =& $params["item"];
 		$id = $obj[$this->primary];
