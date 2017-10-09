@@ -57,6 +57,8 @@ abstract class Base extends \Prefab{
 	}
 
 	function fetchRow($where, $params = array(), $options = array()) {
+    $options["_action"] = "fetchRow";
+
 		return $this->fetchAll($where, $params, $options)[0];
 	}
 
@@ -64,12 +66,20 @@ abstract class Base extends \Prefab{
 
 		$params['where'] = $where;
 
+		if(!isset($options["_action"])){
+			$options["_action"] = "fetchAll";
+		}
+
 		$items = $this->find($params, $options);
 
 		return $items;
 	}
 
 	function find($params, $options = array()) {
+
+		if(!isset($options["_action"])){
+			$options["_action"] = "find";
+		}
 
 		$loads = isset($options['_load']) ? $options['_load'] : [];
 
@@ -163,13 +173,16 @@ abstract class Base extends \Prefab{
 			 $limit_str", $params);
 
 
-	  foreach($this->_special_columns as $column => $colSpec){
-			if($colSpec['list_fetch'] == FetchType::NO_FETCH){
-				foreach ($items as &$item) {
-					unset($item[$column]);
+		  foreach($this->_special_columns as $column => $colSpec){
+				if($options["_action"] != "fetchRow"){
+					//LIST FILTERS
+					if($colSpec['list_fetch'] == FetchType::NO_FETCH){
+						foreach ($items as &$item) {
+							unset($item[$column]);
+						}
+					}
 				}
 			}
-		}
 
 		if($this->_hasEagerLoadings || count($loads)){
 			foreach ($this->_referenceMap as $ref => $refSpec) {
