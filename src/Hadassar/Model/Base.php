@@ -199,7 +199,7 @@ abstract class Base extends \Prefab{
 			}
 		}
 
-		foreach ($items as $item) {
+		foreach ($items as &$item) {
 			$this->prepare($item);
 		}
 
