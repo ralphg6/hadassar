@@ -33,9 +33,17 @@ abstract class Base extends \Prefab{
 	}
 
 	function create($f3, $params) {
-		$data = (array) json_decode(file_get_contents('php://input'));
-		$this->_echoJSON($this->_model->create($data));
-		$this->f3()->status(201);
+		try{
+			$data = (array) json_decode(file_get_contents('php://input'));
+			if($data){
+					$this->_echoJSON($this->_model->create($data));
+					$this->f3()->status(201);
+			}	else {
+					$this->f3()->error(400);
+			}
+		}catch(Exception $e){
+			xd($e);
+		}
 	}
 
 	function update($f3, $params) {

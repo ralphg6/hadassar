@@ -287,7 +287,7 @@ abstract class Base extends \Prefab{
 					$value = "NULL";
 				}
 				if(is_bool($value)){
-					$value = $value ? 1 : 0;
+					$value = $value ? "true" : "false";
 				}
 				array_push($values, $value);
 			}
@@ -306,8 +306,10 @@ abstract class Base extends \Prefab{
 				if(!isset($params[$this->primary])){
 						$params[$this->primary] = $this->getDB()->pdo()->lastInsertId();
 				}
-				$params = $this->get($params[$this->primary]);
-				return $params[$this->primary];
+
+				//xd($this->get($params[$this->primary]));
+
+				return $this->get($params[$this->primary]);
 			}
 
 			//echo "false\n";
