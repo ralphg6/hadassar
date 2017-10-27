@@ -336,7 +336,7 @@ abstract class Base extends \Prefab{
 					$value = "'".addslashes($value)."'";
 				}
 				if(is_object($value)){
-					$value = "jsonb '".json_encode($value)."'";
+					$value = "'".json_encode($value)."'::jsonb";
 				}
 				if(empty($value))
 					continue;
@@ -350,8 +350,10 @@ abstract class Base extends \Prefab{
 				return true;
 
 			$sql = "UPDATE {$this->_tableName} SET $updates WHERE {$this->primary}=$id";
-		//	echo($sql);
-			//exit();
+		//	if($id == 5){
+			//	echo($sql);
+				//exit();
+			//}
 			$this->_execDB($sql);
 	}
 
@@ -371,7 +373,8 @@ abstract class Base extends \Prefab{
 			$values = array();
 
 			foreach ($matches[1] as $arg) {
-				$values[$arg] = $args[$arg];
+				if(isset($args[$arg]))
+					$values[$arg] = $args[$arg];
 			}
 
 			//var_dump($values);
