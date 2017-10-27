@@ -117,8 +117,6 @@ abstract class Base extends \Prefab{
 
 		$where = array();
 
-		//xd($params);
-
 		if(isset($params['where'])){
 				if(is_array($params['where']))
 						$where = array_merge($where, $params['where']);
@@ -289,6 +287,9 @@ abstract class Base extends \Prefab{
 				if(is_bool($value)){
 					$value = $value ? "true" : "false";
 				}
+				if(is_object($value)){
+					$value = "jsonb '".json_encode($value)."'";
+				}
 				array_push($values, $value);
 			}
 
@@ -334,6 +335,9 @@ abstract class Base extends \Prefab{
 				if(is_string($value)){
 					$value = "'".addslashes($value)."'";
 				}
+				if(is_object($value)){
+					$value = "jsonb '".json_encode($value)."'";
+				}
 				if(empty($value))
 					continue;
 
@@ -346,7 +350,7 @@ abstract class Base extends \Prefab{
 				return true;
 
 			$sql = "UPDATE {$this->_tableName} SET $updates WHERE {$this->primary}=$id";
-			//echo($sql);
+		//	echo($sql);
 			//exit();
 			$this->_execDB($sql);
 	}
