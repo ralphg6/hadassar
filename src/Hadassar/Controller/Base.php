@@ -8,6 +8,13 @@ abstract class Base extends \Prefab{
 
 	protected $_baseF3;
 
+	protected static $_REF_ACTIONS = array(
+		"GET" => "load",
+		"POST" => "add",
+		"DELETE" => "remove",
+		"PUT" => "set"
+	);
+
 	function f3(){
 		return @\Base::instance();
 	}
@@ -64,14 +71,16 @@ abstract class Base extends \Prefab{
 	function subRoute($f3, $params){
 		$route = $params['subRoute'];
 
-		$item = $this->_model->get(array('param' => $params[$this->_model->primary]));
+		$item = (array) $this->_model->get($params["id"]);
+
+		//xd($route, $item);
 
 		$modelSubRoutes = array();
 
-		foreach ($this->_model->getReferenceMap() as $ref => $refSpec) {
+		foreach ($this->_model->getRelationships() as $ref => $refSpec) {
 
 			$modelSubRoutes[$ref] = array(
-					"method" => get_class($this->_model)."->loadRef",
+					"method" => get_class($this->_model)."->processRef",
 					"params" => array(
 							"item" => &$item,
 							"ref" => $ref,
@@ -83,13 +92,12 @@ abstract class Base extends \Prefab{
 		$routes = array_merge($modelSubRoutes, $this->subRoutes());
 
 		if(!isset($routes[$route])){
+			//xd($this->_model->getReferenceMap());
 			$this->f3()->error(404);
 			return;
 		}
 
 		$routeSpec = $routes[$route];
-
-
 
 		if($item == null){
 			$this->f3()->error(404);
@@ -103,9 +111,17 @@ abstract class Base extends \Prefab{
 			}
 		}
 
-		//xd($params);
+		$data = (array) json_decode(file_get_contents('php://input'));
+		if(!empty($data)){
+			// $params["data"] = array();
+			// foreach ($data as $item) {
+			// 	$params["data"][] = (array) $item;
+			// }
+			//xd($params);
+			$params["data"] = $data;
+		}
 
-		$result = $this->f3()->call($routeSpec['method'], array($params, $routeSpec['options']));
+		$result = $this->f3()->call($routeSpec['method'], array(self::$_REF_ACTIONS[$_SERVER['REQUEST_METHOD']], $params, $routeSpec['options']));
 
 		$this->_echoJSON($result);
 	}

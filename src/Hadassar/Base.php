@@ -17,7 +17,10 @@ class Base extends \Prefab{
     $this->_f3->route("POST /api/v1/$route","{$controller}->create");
     $this->_f3->route("PUT /api/v1/$route/@id","{$controller}->update");
     $this->_f3->route("DELETE /api/v1/$route/@id","{$controller}->delete");
-    $this->_f3->route("GET /api/v1/$route/@id/@subRoute","{$controller}->subRoute");
+    //subRoutes
+    $this->_f3->route("GET|POST|DELETE|PUT /api/v1/$route/@id/@subRoute","{$controller}->subRoute");
+    $this->_f3->route("DELETE /api/v1/$route/@id/@subRoute/@subId","{$controller}->subRoute");
+
   }
 
   public function swagger($f3){

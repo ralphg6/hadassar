@@ -12,6 +12,8 @@ abstract class Base extends \Prefab{
 
 	protected $_referenceMap = array();
 
+	protected $_relationships = array();
+
 	protected $_hasReferences = false;
 
 	protected $_hasEagerLoadings = false;
@@ -21,16 +23,15 @@ abstract class Base extends \Prefab{
 	protected $_db;
 
 	function __construct(){
+    $this->_hasReferences = sizeof($this->_referenceMap) > 0;
 
-		$this->_hasReferences = sizeof($this->_referenceMap) > 0;
-
-		foreach ($this->_referenceMap as $ref => $refSpec) {
-			if($refSpec['fetch'] == FetchType::EAGER){
+		foreach ($this->_referenceMap as $refName => $refSpec) {
+			$classname = "Hadassar\\Model\\Relationship\\{$refSpec['type']}";
+			$this->_relationships[$refName] = new $classname($refName, $this, $refSpec);
+			if($this->_hasEagerLoadings || $this->_relationships[$refName]->getFetchType() == FetchType::EAGER){
 				$this->_hasEagerLoadings = true;
-				break;
 			}
 		}
-
 	}
 
 	function f3(){
@@ -183,8 +184,10 @@ abstract class Base extends \Prefab{
 			}
 
 		if($this->_hasEagerLoadings || count($loads)){
-			foreach ($this->_referenceMap as $ref => $refSpec) {
-				if($refSpec['fetch'] == FetchType::EAGER || in_array($ref, $loads)){
+			foreach ($this->_relationships as $ref => $refSpec) {
+
+				if($refSpec->getFetchType() == FetchType::EAGER || in_array($ref, $loads)){
+
 					foreach ($items as &$item) {
 
 
@@ -200,7 +203,7 @@ abstract class Base extends \Prefab{
 								"_load" => $subLoads
 							));
 
-							$this->loadRef( array(
+							$this->processRef("load", array(
 										"item" => &$item,
 										"ref" => $ref,
 								), $subOpts
@@ -219,58 +222,14 @@ abstract class Base extends \Prefab{
 
 	function prepare(&$item){}
 
-	function loadRef($params, $options = array()) {
-		//xd($options);
-
-//		echo "load {$this->_tableName} {$params['item']['id']} {$params['ref']} \n";
+	function processRef($action, $params, $options = array()) {
 
 		$obj =& $params["item"];
-		$id = $obj[$this->primary];
 
 		$refName = $params["ref"];
-		$refSpec = $this->getReferenceMap($refName);
+		$refSpec = $this->getRelationships($refName);
 
-		switch ($refSpec['type']) {
-			case "one-to-many":
-				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->get", array($obj[$refSpec['columns']], $options));
-				break;
-			case "many-to-many":
-				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
-						"{$this->primary}  in (select {$refSpec['columns']} from {$refSpec['relational_table']} where {$refSpec['filter_column']} = {$id})"
-					, array() , $options));
-				break;
-			case "reverse":
-				$rmetadata =  $this->f3()->call("{$refSpec['model']}->getMetada");
-				$reverseRefMap = $rmetadata["referenceMap"];
-
-				$tmodel = get_class($this);
-
-				$rrefs = array();
-
-				foreach ($reverseRefMap as $rrefSpec) {
-						if($rrefSpec["model"] == $tmodel){
-								$rrefs[] = $rrefSpec;
-						}
-				}
-
-				if(count($rrefs) != 1){
-					$this->f3()->error("500", "Couln't defined the reverse reference, retriveds: ".count($rrefs));
-					exit();
-				}
-
-				$rrefSpec = $rrefs[0];
-
-				$obj[$refName] = $this->f3()->call("{$refSpec['model']}->fetchAll", array(
-						"{$rrefSpec['columns']} = {$id}", array(), $options
-				));
-				break;
-			default:
-				$this->f3()->error("405", "Reference Load Type '{$refSpec['type']}' not implemented");
-				exit();
-				break;
-		}
-
-		return $obj[$refName];
+		return $refSpec->$action($obj, $params, $options);
 	}
 
 	function create(&$params) {
@@ -391,22 +350,22 @@ abstract class Base extends \Prefab{
 		return $this->getDB()->exec($sql);
 	}
 
-	public function getMetada(){
+	public function getMetadata(){
 		return array(
 			"primary" => $this->primary,
 			"tableName" => $this->_tableName,
-			"referenceMap" => $this->getReferenceMap(),
+			"relationships" => $this->getRelationships(),
 		);
 	}
 
-	public function getReferenceMap($refName = NULL){
-		foreach ($this->_referenceMap as &$refSpec) {
-			if(!isset($refSpec['type'])){
-				$refSpec['type'] = "one-to-many";
-			}
-		}
+	public function getRelationships($refName = NULL){
+		// foreach ($this->_relationships as &$refSpec) {
+		// 	if(!isset($refSpec->getType())){
+		// 		$refSpec->getType() = "one-to-many";
+		// 	}
+		// }
 
-		return isset($refName) ? $this->_referenceMap[$refName] : $this->_referenceMap;
+		return isset($refName) ? $this->_relationships[$refName] : $this->_relationships;
 	}
 
 	public function setDB($db){
@@ -419,6 +378,5 @@ abstract class Base extends \Prefab{
 		}
 		return $this->_db;
 	}
-
 
 }
