@@ -10,7 +10,7 @@ class Reverse extends Base {
     public function load(&$entity, $params = array(), $options = array()){
 			$id = $entity[$this->_src_model->primary];
 
-			$rmetadata =  $this->f3()->call("{$this->_model}->getMetada");
+			$rmetadata =  $this->f3()->call("{$this->_model}->getMetadata");
 			$reverseRefMap = $rmetadata["relationships"];
 
 			$tmodel = get_class($this->_src_model);

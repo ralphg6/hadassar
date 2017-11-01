@@ -21,18 +21,20 @@ class ManyToMany extends Base {
     public function set(&$entity, $params = array(), $options = array()){
 			$oldList = $this->load($entity, $params, $options);
 			$list = $params["data"];
+			$metadata = $this->f3()->call("{$this->_model}->getMetadata");
+			$pkColumn = $metadata['primary'];
 
 			foreach ($oldList as $oldItem) {
 				$remains = false;
 				foreach ($list as $k => $item) {
-					$remains = $oldItem['id'] == $item->id;
+					$remains = $oldItem[$pkColumn] == $item->$pkColumn;
 					if($remains){
 						unset($list[$k]);
 						break;
 					}
 				}
 				if(!$remains){
-					$this->remove($entity, array("subId" => $oldItem["id"]), $options);
+					$this->remove($entity, array("subId" => $oldItem[$pkColumn]), $options);
 				}
 			}
 
@@ -57,6 +59,7 @@ class ManyToMany extends Base {
 			$list = $params["data"];
 
 			$metadata = $this->f3()->call("{$this->_model}->getMetadata");
+			$pkColumn = $metadata['primary'];
 
 			if(!$list){
 				$list = array((object) array(
@@ -66,7 +69,7 @@ class ManyToMany extends Base {
 			$db = $this->_src_model->getDB();
 			//xd($list);
 			foreach ($list as $item) {
-				$pkColumn = $metadata['primary'];
+
 				$sql = "DELETE FROM {$this->_relational_table} WHERE {$this->_filter_column}={$id} AND {$this->_columns}={$item->$pkColumn}";
 				//echo $sql . "\n";
 				$db->exec($sql);
