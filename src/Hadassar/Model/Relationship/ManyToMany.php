@@ -34,7 +34,7 @@ class ManyToMany extends Base {
 					}
 				}
 				if(!$remains){
-					$this->remove($entity, array("subId" => $oldItem[$pkColumn]), $options);
+					$this->remove($entity, array("subId" => $oldItem[$pkColumn	]), $options);
 				}
 			}
 

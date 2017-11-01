@@ -172,6 +172,7 @@ abstract class Base extends \Prefab{
 			 $limit_str", $params);
 
 
+			 xd_echo($options["_action"], $this->_special_columns);
 		  foreach($this->_special_columns as $column => $colSpec){
 				if($options["_action"] != "fetchRow"){
 					//LIST FILTERS
@@ -183,6 +184,8 @@ abstract class Base extends \Prefab{
 				}
 			}
 
+		unset($options["_action"]);
+			
 		if($this->_hasEagerLoadings || count($loads)){
 			foreach ($this->_relationships as $ref => $refSpec) {
 
