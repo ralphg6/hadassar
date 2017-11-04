@@ -82,24 +82,24 @@ abstract class Base extends \Prefab{
 			$options["_action"] = "find";
 		}
 
-		$loads = isset($options['_load']) ? $options['_load'] : [];
+		$query = $params['query'] ?? array();
 
-		$query = $params['query'] ? $params['query'] : array();
+		$loads = $options['_load'] ?? $query['_load'] ?? array();
 		unset($query["_load"]);
 
-		$offset = isset($query['_offset']) ? $query['_offset'] : false;
+		$offset = $options['_offset'] ?? $query['_offset'] ?? false;
 		unset($query['_offset']);
 
-		$limit = isset($query['_limit']) ? $query['_limit'] : 10;
+		$limit = $options['_limit'] ?? $query['_limit'] ?? 10;
 		unset($query['_limit']);
 
-		$page = $query['_page'] ? $query['_page'] : 1;
+		$page = $options['_page'] ?? $query['_page'] ?? 1;
 		unset($query['_page']);
 
 		if(!$offset)
 			$offset = $limit*($page-1);
 
-		$mode = $query['_mode'] ? $query['_mode'] : 'and';
+		$mode = $options['_mode'] ?? $query['_mode'] ?? 'and';
 		unset($query['_mode']);
 
 		$count = isset($query['_count']);
@@ -203,7 +203,8 @@ abstract class Base extends \Prefab{
 							}
 
 							$subOpts = array_merge($options, array(
-								"_load" => $subLoads
+								"_load" => $subLoads,
+								'_limit' => -1
 							));
 
 							$this->processRef("load", array(

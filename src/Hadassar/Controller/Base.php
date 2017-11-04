@@ -121,6 +121,8 @@ abstract class Base extends \Prefab{
 			$params["data"] = $data;
 		}
 
+		//xd($params);
+
 		$result = $this->f3()->call($routeSpec['method'], array(self::$_REF_ACTIONS[$_SERVER['REQUEST_METHOD']], $params, $routeSpec['options']));
 
 		$this->_echoJSON($result);

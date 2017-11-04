@@ -31,7 +31,7 @@ class Reverse extends Base {
 			$rrefSpec = $rrefs[0];
 
 			$entity[$this->_name] = $this->f3()->call("{$this->_model}->fetchAll", array(
-					$rrefSpec->getColumns() . " = {$id}", array(), $options
+					$rrefSpec->getColumns() . " = {$id}", $params, $options
 			));
 
 			return $entity[$this->_name];
