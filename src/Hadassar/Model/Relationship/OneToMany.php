@@ -8,8 +8,13 @@ use
 class OneToMany extends Base {
 
     public function load(&$entity, $params = array(), $options = array()){
-			$entity[$this->_name] = $this->f3()->call("{$this->_model}->get", array($entity[$this->_columns], $options));
-		 	return $entity[$this->_name];
+			//xd_echo($entity, $this->_columns);
+			$rel = NULL;
+			if($entity[$this->_columns]){
+				$rel = $this->f3()->call("{$this->_model}->get", array($entity[$this->_columns], $options));
+			}
+			$entity[$this->_name] = $rel;
+			return $entity[$this->_name];
 		}
 
     /*public function set(&$entity, $params = array(), $options = array()){
@@ -59,7 +64,7 @@ class OneToMany extends Base {
 
 			$this->f3()->call("{$this->_model}->remove", array("$pkColumn" => $params["subId"]));
 		}*/
-		
+
 		public function set(&$entity, $params = array(), $options = array()){
 			$this->f3()->error(501);
 		}

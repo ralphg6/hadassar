@@ -329,7 +329,7 @@ abstract class Base extends \Prefab{
 	}
 
 	protected function _execDB($sql, $args = array()){
-			//xd_echo($sql."\n".var_export($args, true)."\n-------------\n");
+			xd_echo($sql."\n".var_export($args, true)."\n-------------\n");
 
 			//die($sql);
 			preg_match_all('/:([a-zA-Z_]+)/', $sql, $matches);
