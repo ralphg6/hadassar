@@ -174,7 +174,7 @@ abstract class Base extends \Prefab{
 
 			 //xd_echo($options["_action"], $this->_special_columns);
 		  foreach($this->_special_columns as $column => $colSpec){
-				if($options["_action"] != "fetchRow"){
+				if($options["_action"] != "fetchRow" || $options["fetch_relation"]){
 					//LIST FILTERS
 					if($colSpec['list_fetch'] == FetchType::NO_FETCH){
 						foreach ($items as &$item) {

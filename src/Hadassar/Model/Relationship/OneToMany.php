@@ -9,6 +9,7 @@ class OneToMany extends Base {
 
     public function load(&$entity, $params = array(), $options = array()){
 			//xd_echo($entity, $this->_columns);
+			$options["fetch_relation"] = true;
 			$rel = NULL;
 			if($entity[$this->_columns]){
 				$rel = $this->f3()->call("{$this->_model}->get", array($entity[$this->_columns], $options));
