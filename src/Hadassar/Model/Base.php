@@ -116,30 +116,37 @@ abstract class Base extends \Prefab{
 
 		$order = "order by $order";
 
-		$where = array();
+		$where = $query['_where'] ? $query['_where'] : false;
+		unset($query['_where']);
 
-		if(isset($params['where'])){
-				if(is_array($params['where']))
-						$where = array_merge($where, $params['where']);
-				else
-						array_push($where, $params['where']);
-		}
+		if(!$where){
 
-		if(isset($query['where'])){
-				array_push($where, $query['where']);
-		}
+			$where = array();
 
-		foreach ($query as $key => $value) {
-			if(is_string($value)){
-				$value = "'$value'";
+			if(isset($params['where'])){
+					if(is_array($params['where']))
+							$where = array_merge($where, $params['where']);
+					else
+							array_push($where, $params['where']);
 			}
-			array_push($where, "$key=$value");
-		}
 
-		$where = implode(" $mode ", $where);
+			if(isset($query['where'])){
+					array_push($where, $query['where']);
+			}
 
-		if(empty($where)){
-				$where = "true=true";
+			foreach ($query as $key => $value) {
+				if(is_string($value)){
+					$value = "'$value'";
+				}
+				array_push($where, "$key=$value");
+			}
+
+			$where = implode(" $mode ", $where);
+
+			if(empty($where)){
+					$where = "true=true";
+			}
+			
 		}
 		//if($this->_tableName == "tb_etapa")
 
