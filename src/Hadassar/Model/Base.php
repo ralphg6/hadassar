@@ -150,11 +150,8 @@ abstract class Base extends \Prefab{
 					$rel = $this->f3()->call("{$srcModel}->getRelationships", array($refName));
 					$joins[] = $rel->join();
 					$srcModel = $rel->getModel();
+					$key = "$refName.$rest";
 				};
-
-				//xd($joins);
-
-				$key = "$refName.$rest";
 
 				if(strpos($value, '%') === FALSE){
 					array_push($where, "$key=$value");
