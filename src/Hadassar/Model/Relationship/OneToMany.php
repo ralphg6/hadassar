@@ -80,10 +80,12 @@ class OneToMany extends Base {
 			$this->f3()->error(501);
 		}
 
-		public function join(){
+		public function join($alias, $parentAlias = ""){
 			$srcMetadata = $this->_src_model->getMetadata();
 			$metadata = $this->f3()->call("{$this->_model}->getMetadata");
 
-			return "INNER JOIN {$metadata['tableName']} as {$this->_name} ON {$metadata['tableName']}.{$metadata['primary']}={$srcMetadata['tableName']}.{$this->_columns}";
+			$parentAlias = $parentAlias ? $parentAlias : $srcMetadata['tableName'];
+
+			return "INNER JOIN {$metadata['tableName']} as $alias ON $alias.{$metadata['primary']}=$parentAlias.{$this->_columns}";
 		}
 }

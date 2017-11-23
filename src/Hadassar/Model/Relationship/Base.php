@@ -43,6 +43,10 @@ abstract class Base {
       return $this->_model;
     }
 
+		public function getSrcModel(){
+      return $this->_src_model;
+    }
+
     public function getColumns(){
       return $this->_columns;
     }
@@ -67,5 +71,5 @@ abstract class Base {
 
     public abstract function remove(&$entity, $params = array(), $options = array());
 
-		public abstract function join();
+		public abstract function join($alias, $parentAlias = "");
 }

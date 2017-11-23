@@ -76,7 +76,7 @@ class ManyToMany extends Base {
 			}
 		}
 
-		public function join(){
+		public function join($alias, $parentAlias = ""){
 			return "";
 		}
 

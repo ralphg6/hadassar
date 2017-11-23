@@ -143,14 +143,15 @@ abstract class Base extends \Prefab{
 
 				//join handler
 				$rest = $key;
+				$parentAlias = $this->_tableName;
 				$srcModel = get_class($this);
 				while(strpos($rest, '.') !== FALSE){
 					list($refName, $rest) = explode('.', $rest, 2);
-					//xd_echo($refName, $rest);
 					$rel = $this->f3()->call("{$srcModel}->getRelationships", array($refName));
-					$joins[] = $rel->join();
+					$joins[] = $rel->join($refName, $parentAlias);
 					$srcModel = $rel->getModel();
 					$key = "$refName.$rest";
+					$parentAlias = $refName;
 				};
 
 				if(strpos($value, '%') === FALSE){
@@ -171,7 +172,7 @@ abstract class Base extends \Prefab{
 
 		}
 
-		$joins = implode(" ", $joins);
+		$joins = implode("\n", $joins);
 		//if($this->_tableName == "tb_etapa")
 
 			// xd("select {$this->_tableName}.*
@@ -245,9 +246,18 @@ abstract class Base extends \Prefab{
 								'_limit' => -1
 							));
 
+							$subQuery = array();
+							foreach ($query as $key => $value) {
+								list($refName, $rest) = explode('.', $key, 2);
+								if($refName == $ref)
+									$subQuery[$rest] = $value;
+							}
+
+
 							$this->processRef("load", array(
 										"item" => &$item,
 										"ref" => $ref,
+										"query" => $subQuery
 								), $subOpts
 							);
 					}
