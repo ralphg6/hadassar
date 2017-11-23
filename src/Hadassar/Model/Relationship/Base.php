@@ -66,4 +66,6 @@ abstract class Base {
     public abstract function add(&$entity, $params = array(), $options = array());
 
     public abstract function remove(&$entity, $params = array(), $options = array());
+
+		public abstract function join();
 }

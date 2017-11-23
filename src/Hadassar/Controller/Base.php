@@ -34,8 +34,32 @@ abstract class Base extends \Prefab{
 	}
 
 	function getAll($f3, $params) {
-	//	xd($_GET);
-		$params['query'] = $_GET;
+		$getparts = array();
+		$getparts = explode("&", $_SERVER["QUERY_STRING"]);
+
+		$get = array();
+		foreach ($getparts as $key => $value){
+			if(empty($value))
+				break;
+			list($key, $value) = explode('=', $value);
+
+			$value = urldecode($value);
+
+			//array handler
+			if(substr($key, -2)  == "[]"){
+				$key = substr($key, 0, -2);
+				if(!isset($get[$key])){
+					$get[$key] = array();
+				}
+				$get[$key][] = $value;
+			}else{
+				$get[$key] = $value;
+			}
+		}
+
+		//xd($get, $_GET);
+
+		$params['query'] = $get;
 		$items = $this->_model->find($params, $this->_handleOptions());
 		$this->_echoJSON($items);
 	}

@@ -49,4 +49,8 @@ class Reverse extends Base {
 			$this->f3()->error(501);
 		}
 
+		public function join(){
+			return "";
+		}
+
 }

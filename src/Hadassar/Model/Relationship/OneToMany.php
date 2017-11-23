@@ -10,10 +10,12 @@ class OneToMany extends Base {
     public function load(&$entity, $params = array(), $options = array()){
 			//xd_echo($entity, $this->_columns);
 			$options["fetch_relation"] = true;
+
 			$rel = NULL;
 			if($entity[$this->_columns]){
 				$rel = $this->f3()->call("{$this->_model}->get", array($entity[$this->_columns], $options));
 			}
+			//xd_echo($params, $options, $rel);
 			$entity[$this->_name] = $rel;
 			return $entity[$this->_name];
 		}
@@ -76,5 +78,12 @@ class OneToMany extends Base {
 
 		public function remove(&$entity, $params = array(), $options = array()){
 			$this->f3()->error(501);
+		}
+
+		public function join(){
+			$srcMetadata = $this->_src_model->getMetadata();
+			$metadata = $this->f3()->call("{$this->_model}->getMetadata");
+
+			return "INNER JOIN {$metadata['tableName']} as {$this->_name} ON {$metadata['tableName']}.{$metadata['primary']}={$srcMetadata['tableName']}.{$this->_columns}";
 		}
 }

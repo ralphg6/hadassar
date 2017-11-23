@@ -76,4 +76,8 @@ class ManyToMany extends Base {
 			}
 		}
 
+		public function join(){
+			return "";
+		}
+
 }

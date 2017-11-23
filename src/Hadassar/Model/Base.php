@@ -119,6 +119,8 @@ abstract class Base extends \Prefab{
 		$where = $query['_where'] ? $query['_where'] : false;
 		unset($query['_where']);
 
+		$joins = array();
+
 		if(!$where){
 
 			$where = array();
@@ -138,16 +140,41 @@ abstract class Base extends \Prefab{
 				if(is_string($value)){
 					$value = "'$value'";
 				}
-				array_push($where, "$key=$value");
+
+				//join handler
+				$rest = $key;
+				$srcModel = get_class($this);
+				while(strpos($rest, '.') !== FALSE){
+					list($refName, $rest) = explode('.', $rest, 2);
+					//xd_echo($refName, $rest);
+					$rel = $this->f3()->call("{$srcModel}->getRelationships", array($refName));
+					$joins[] = $rel->join();
+					$srcModel = $rel->getModel();
+				};
+
+				//xd($joins);
+
+				$key = "$refName.$rest";
+
+				if(strpos($value, '%') === FALSE){
+					array_push($where, "$key=$value");
+				}else{
+					array_push($where, "$key ILIKE $value");
+				}
+
 			}
 
 			$where = implode(" $mode ", $where);
 
+		  //xd($where);
+
 			if(empty($where)){
 					$where = "true=true";
 			}
-			
+
 		}
+
+		$joins = implode(" ", $joins);
 		//if($this->_tableName == "tb_etapa")
 
 			// xd("select {$this->_tableName}.*
@@ -160,6 +187,7 @@ abstract class Base extends \Prefab{
 			$items = $this->_execDB(
 				"select count({$this->_tableName}.{$this->primary}) as count
 			 	 from {$this->_tableName}
+				 $joins
 				 where {$where}", $params);
 			return intval($items[0]["count"]);
 		}
@@ -174,6 +202,7 @@ abstract class Base extends \Prefab{
 		$items = $this->_execDB(
 			"select {$this->_tableName}.*
 		 	 from {$this->_tableName}
+			 $joins
 			 where {$where}
 			 $order
 			 $limit_str", $params);
@@ -196,10 +225,15 @@ abstract class Base extends \Prefab{
 		if($this->_hasEagerLoadings || count($loads)){
 			foreach ($this->_relationships as $ref => $refSpec) {
 
-				if($refSpec->getFetchType() == FetchType::EAGER || in_array($ref, $loads)){
+				$lloads = array();
+				foreach ($loads as $load) {
+					$meta = explode(".", $load, 2);
+					$lloads[] = $meta[0];
+				}
+
+				if($refSpec->getFetchType() == FetchType::EAGER || in_array($ref, $lloads)){
 
 					foreach ($items as &$item) {
-
 
 							$subLoads = array();
 							foreach ($loads as $value) {
