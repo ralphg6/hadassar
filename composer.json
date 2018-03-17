@@ -1,5 +1,6 @@
 {
     "name": "ralphg6/hadassar",
+    "version": "1.1.1-rc.1",
     "description": "A simple RESTful API framework for Fat-Free Framework",
     "homepage": "http://github.com/ralphg6/hadassar",
     "license": "MIT",

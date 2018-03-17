@@ -155,7 +155,13 @@ abstract class Base extends \Prefab{
 				};
 
 				if(strpos($value, '%') === FALSE){
-					array_push($where, "$key=$value");
+					if($value === "'NOTNULL'"){
+						array_push($where, "$key is not null");
+					}else if($value === "'NULL'"){
+						array_push($where, "$key is null");
+					}else{
+						array_push($where, "$key=$value");
+					}
 				}else{
 					array_push($where, "$key ILIKE $value");
 				}
