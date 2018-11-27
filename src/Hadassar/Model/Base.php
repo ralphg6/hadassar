@@ -196,7 +196,17 @@ abstract class Base extends \Prefab{
 			return intval($items[0]["count"]);
 		}
 
-		$limit_str = "offset $offset limit $limit";
+		$driver = $this->getDB()->driver();
+
+		$limit_str = "";
+		switch($driver){
+			case 'mysql':
+				$limit_str = "limit $offset,$limit";
+				break;
+			default:
+				$limit_str = "offset $offset limit $limit";	
+		}
+
 		if((is_bool($limit) && !$limit) || $limit < 1){
 			$limit_str = "";
 		}
@@ -394,7 +404,7 @@ abstract class Base extends \Prefab{
 					$values[$arg] = $args[$arg];
 			}
 
-			//var_dump($values);
+			//var_dump($sql, $values);
 
 			return $this->getDB()->exec($sql, $values);
 	}
