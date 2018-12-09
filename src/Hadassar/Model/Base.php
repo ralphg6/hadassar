@@ -26,7 +26,8 @@ abstract class Base extends \Prefab{
     $this->_hasReferences = sizeof($this->_referenceMap) > 0;
 
 		foreach ($this->_referenceMap as $refName => $refSpec) {
-			$classname = "Hadassar\\Model\\Relationship\\{$refSpec['type']}";
+			$type = $refSpec['type'] ?? 'OneToMany';
+			$classname = "Hadassar\\Model\\Relationship\\{$type}";
 			$this->_relationships[$refName] = new $classname($refName, $this, $refSpec);
 			if($this->_hasEagerLoadings || $this->_relationships[$refName]->getFetchType() == FetchType::EAGER){
 				$this->_hasEagerLoadings = true;
@@ -81,6 +82,8 @@ abstract class Base extends \Prefab{
 		if(!isset($options["_action"])){
 			$options["_action"] = "find";
 		}
+
+		$driver = $this->getDB()->driver();
 
 		$query = $params['query'] ?? array();
 
@@ -163,7 +166,14 @@ abstract class Base extends \Prefab{
 						array_push($where, "$key=$value");
 					}
 				}else{
-					array_push($where, "$key ILIKE $value");
+					switch($driver){
+						case 'mysql':
+							$lvalue = strtolower($value);
+							array_push($where, "lower($key) LIKE $lvalue");
+							break;
+						default:
+							array_push($where, "$key ILIKE $value");	
+					}
 				}
 
 			}
@@ -195,8 +205,6 @@ abstract class Base extends \Prefab{
 				 where {$where}", $params);
 			return intval($items[0]["count"]);
 		}
-
-		$driver = $this->getDB()->driver();
 
 		$limit_str = "";
 		switch($driver){
