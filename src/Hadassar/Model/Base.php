@@ -314,7 +314,13 @@ abstract class Base extends \Prefab{
 
 			foreach ($params as $column => $value) {
 				if(is_string($value)){
-					$value = "'".addslashes($value)."'";
+
+					$prefix = "";
+					$driver = $this->getDB()->driver();
+					if ($driver == "pgsql") {
+						$prefix = "E";
+					}
+					$value = $prefix."'".addslashes($value)."'";
 				}
 				if(!is_numeric($value) && $value === NULL){
 					$value = "NULL";
@@ -368,7 +374,12 @@ abstract class Base extends \Prefab{
 					$value = "LOAD_FILE('$filename')";
 				}
 				if(is_string($value)){
-					$value = "'".addslashes($value)."'";
+					$prefix = "";
+					$driver = $this->getDB()->driver();
+					if ($driver == "pgsql") {
+						$prefix = "E";
+					}
+					$value = $prefix."'".addslashes($value)."'";
 				}
 				if(is_object($value)){
 					$value = "'".json_encode($value)."'::jsonb";
